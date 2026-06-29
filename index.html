@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>M4A Folder Player</title>
+    <title>M4A VPS Player</title>
     <style>
         body { font-family: system-ui, -apple-system, sans-serif; background: #121212; color: #ffffff; margin: 0; padding: 20px; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 15px; }
@@ -17,25 +17,18 @@
         .playing .track-path { color: #b3d4ff; }
         .player-ui { flex: 1; background: #1e1e1e; padding: 30px; border-radius: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; border: 1px solid #333; }
         audio { width: 100%; margin-top: 25px; outline: none; }
-        .btn { padding: 10px 20px; background: #5fa8ff; color: #000; font-weight: bold; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
-        .btn:hover { background: #4a8cd4; }
-        input[type="file"] { display: none; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h2>🎵 M4A Web Player</h2>
-        <label class="btn">
-            Choose Root Folder
-            <input type="file" id="folderInput" webkitdirectory directory multiple />
-        </label>
+        <h2>🎵 Server M4A Player</h2>
     </div>
 
     <div class="container">
         <div class="playlist" id="playlist">
             <div style="padding: 30px; text-align: center; color: #666;">
-                Click "Choose Root Folder" to scan your nested M4A files.
+                Loading tracks from server...
             </div>
         </div>
 
@@ -48,7 +41,6 @@
     </div>
 
     <script>
-        const folderInput = document.getElementById('folderInput');
         const playlistEl = document.getElementById('playlist');
         const audioPlayer = document.getElementById('audioPlayer');
         const nowPlayingName = document.getElementById('nowPlayingName');
@@ -57,38 +49,37 @@
         let tracks = [];
         let currentIndex = -1;
 
-        // Listen for folder selection
-        folderInput.addEventListener('change', (e) => {
-            const files = Array.from(e.target.files);
-            
-            // Filter strictly for .m4a files
-            tracks = files.filter(file => file.name.toLowerCase().endsWith('.m4a'));
-            
-            // Sort files alphabetically by their nested folder path
-            tracks.sort((a, b) => a.webkitRelativePath.localeCompare(b.webkitRelativePath));
-            
-            renderPlaylist();
-        });
+        // Fetch the JSON list of files from the server
+        fetch('tracks.json')
+            .then(response => {
+                if (!response.ok) throw new Error("Could not find tracks.json");
+                return response.json();
+            })
+            .then(data => {
+                tracks = data;
+                renderPlaylist();
+            })
+            .catch(error => {
+                playlistEl.innerHTML = `<div style="padding: 30px; text-align: center; color: #ff6b6b;">Error: Make sure you ran the Python script to generate tracks.json on your VPS.</div>`;
+                console.error(error);
+            });
 
         function renderPlaylist() {
             playlistEl.innerHTML = '';
             
             if (tracks.length === 0) {
-                playlistEl.innerHTML = '<div style="padding: 30px; text-align: center; color: #666;">No M4A files found in this folder.</div>';
+                playlistEl.innerHTML = '<div style="padding: 30px; text-align: center; color: #666;">No M4A files found in tracks.json.</div>';
                 return;
             }
 
-            tracks.forEach((file, index) => {
+            tracks.forEach((track, index) => {
                 const trackEl = document.createElement('div');
                 trackEl.className = 'track';
                 trackEl.onclick = () => playTrack(index);
 
-                // Get folder path without the filename
-                const folderPath = file.webkitRelativePath.replace('/' + file.name, '').replace(file.name, '');
-
                 trackEl.innerHTML = `
-                    <div class="track-name">${file.name}</div>
-                    <div class="track-path">📁 ${folderPath}</div>
+                    <div class="track-name">${track.name}</div>
+                    <div class="track-path">📁 ${track.folder}</div>
                 `;
                 playlistEl.appendChild(trackEl);
             });
@@ -101,21 +92,21 @@
             }
 
             currentIndex = index;
-            const file = tracks[index];
+            const track = tracks[index];
             
             // Add highlight to new track
             const currentEl = playlistEl.children[currentIndex];
             currentEl.classList.add('playing');
             currentEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
-            // Create temporary URL to play local file
-            const objectUrl = URL.createObjectURL(file);
-            audioPlayer.src = objectUrl;
+            // Set the audio source directly to the file path on the server
+            // We use encodeURI to handle spaces or special characters in folder/file names
+            audioPlayer.src = encodeURI(track.path.replace(/\\/g, '/')); 
             audioPlayer.play();
 
             // Update UI
-            nowPlayingName.textContent = file.name;
-            nowPlayingFolder.textContent = file.webkitRelativePath.replace('/' + file.name, '');
+            nowPlayingName.textContent = track.name;
+            nowPlayingFolder.textContent = track.folder;
         }
 
         // Auto-play next song when current one finishes
