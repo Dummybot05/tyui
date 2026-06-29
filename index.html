@@ -3,40 +3,326 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>M4A VPS Player</title>
+    <meta name="color-scheme" content="dark">
+    <title>Server Music Player</title>
     <style>
-        body { font-family: system-ui, -apple-system, sans-serif; background: #121212; color: #ffffff; margin: 0; padding: 20px; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 15px; }
-        .container { display: flex; flex: 1; overflow: hidden; gap: 20px; }
-        .playlist { flex: 2; background: #1e1e1e; border-radius: 8px; overflow-y: auto; border: 1px solid #333; }
-        .track { padding: 12px 15px; cursor: pointer; border-bottom: 1px solid #2a2a2a; display: flex; flex-direction: column; transition: background 0.2s; }
-        .track:hover { background: #2a2a2a; }
-        .track.playing { background: #2b5c8f; border-left: 4px solid #5fa8ff; padding-left: 11px; }
-        .track-name { font-weight: 600; font-size: 15px; }
-        .track-path { font-size: 12px; color: #888; margin-top: 4px; }
-        .playing .track-path { color: #b3d4ff; }
-        .player-ui { flex: 1; background: #1e1e1e; padding: 30px; border-radius: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; border: 1px solid #333; }
-        audio { width: 100%; margin-top: 25px; outline: none; }
+        :root {
+            --spotify-green: #1db954;
+            --spotify-black: #191414;
+            --bg-base: #121212;
+            --bg-elevated: #181818;
+            --bg-highlight: #2a2a2a;
+            --text-base: #b3b3b3;
+            --text-white: #ffffff;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: var(--spotify-black);
+            color: var(--text-white);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* --- TOP SECTION: SIDEBAR + MAIN CONTENT --- */
+        .top-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 240px;
+            background-color: #000000;
+            padding: 24px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            padding: 0 12px;
+            margin-bottom: 10px;
+            color: var(--text-white);
+        }
+        .nav-link {
+            color: var(--text-base);
+            font-weight: 700;
+            font-size: 14px;
+            padding: 8px 12px;
+            cursor: default;
+            transition: color 0.2s;
+        }
+        .nav-link:hover {
+            color: var(--text-white);
+        }
+        .divider {
+            height: 1px;
+            background-color: #282828;
+            margin: 8px 12px;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            background: linear-gradient(180deg, #2b2b2b 0%, var(--bg-base) 300px);
+            background-color: var(--bg-base);
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .playlist-header {
+            display: flex;
+            align-items: flex-end;
+            padding: 40px 32px 24px;
+            gap: 24px;
+        }
+        .cover-art {
+            width: 192px;
+            height: 192px;
+            background: linear-gradient(135deg, #450af5, #c4efd9);
+            box-shadow: 0 4px 60px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 64px;
+        }
+        .header-info p {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin: 0 0 8px 0;
+        }
+        .header-info h1 {
+            font-size: 72px;
+            font-weight: 900;
+            margin: 0 0 12px 0;
+            letter-spacing: -2px;
+        }
+        .header-info span {
+            color: var(--text-base);
+            font-size: 14px;
+        }
+
+        /* Track List Container */
+        .tracks-container {
+            padding: 0 32px 32px;
+            background-color: rgba(0,0,0,0.1);
+        }
+
+        .track-grid-header {
+            display: grid;
+            grid-template-columns: 40px 2fr 1fr;
+            color: var(--text-base);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 8px 16px;
+            border-bottom: 1px solid #2a2a2a;
+            margin-bottom: 12px;
+            position: sticky;
+            top: 0;
+            background-color: var(--bg-base);
+            z-index: 2;
+        }
+
+        .track-row {
+            display: grid;
+            grid-template-columns: 40px 2fr 1fr;
+            align-items: center;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .track-row:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+        .track-row.playing .track-title {
+            color: var(--spotify-green);
+        }
+        .track-row.playing .track-num {
+            color: var(--spotify-green);
+        }
+
+        .track-num {
+            color: var(--text-base);
+            font-size: 14px;
+            font-variant-numeric: tabular-nums;
+        }
+        .track-info-col {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding-right: 16px;
+        }
+        .track-title {
+            color: var(--text-white);
+            font-size: 16px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .track-folder {
+            color: var(--text-base);
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* --- BOTTOM BAR: PLAYER --- */
+        .bottom-bar {
+            height: 90px;
+            background-color: var(--bg-elevated);
+            border-top: 1px solid #282828;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            z-index: 10;
+        }
+
+        .now-playing-left {
+            width: 30%;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .np-cover {
+            width: 56px;
+            height: 56px;
+            background-color: #282828;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            border-radius: 4px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+        }
+        .np-text {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            overflow: hidden;
+        }
+        .np-name {
+            color: var(--text-white);
+            font-size: 14px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .np-folder {
+            color: var(--text-base);
+            font-size: 12px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .player-center {
+            width: 40%;
+            max-width: 722px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Styling the native audio player to blend in */
+        audio {
+            width: 100%;
+            height: 40px;
+            outline: none;
+            opacity: 0.9;
+        }
+
+        .volume-right {
+            width: 30%;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 255, 255, 0.3);
+            border: 3px solid var(--bg-base);
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(255, 255, 255, 0.5);
+        }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h2>🎵 Server M4A Player</h2>
+    <div class="top-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">🎵 Serverify</div>
+            <div class="nav-link">🏠 Home</div>
+            <div class="nav-link">🔍 Search</div>
+            <div class="nav-link">📚 Your Library</div>
+            <div class="divider"></div>
+            <div class="nav-link">➕ Create Playlist</div>
+            <div class="nav-link">💖 Liked Songs</div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="playlist-header">
+                <div class="cover-art">📁</div>
+                <div class="header-info">
+                    <p>Public Playlist</p>
+                    <h1>Server Library</h1>
+                    <span id="trackCount">Loading tracks...</span>
+                </div>
+            </div>
+
+            <div class="tracks-container">
+                <div class="track-grid-header">
+                    <div>#</div>
+                    <div>Title</div>
+                    <div>Album / Folder</div>
+                </div>
+                
+                <div id="playlist">
+                    <!-- Tracks will be injected here via JS -->
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="container">
-        <div class="playlist" id="playlist">
-            <div style="padding: 30px; text-align: center; color: #666;">
-                Loading tracks from server...
+    <!-- Bottom Player Bar -->
+    <div class="bottom-bar">
+        <div class="now-playing-left">
+            <div class="np-cover" id="npCover">💿</div>
+            <div class="np-text">
+                <div class="np-name" id="nowPlayingName">No track selected</div>
+                <div class="np-folder" id="nowPlayingFolder">--</div>
             </div>
         </div>
 
-        <div class="player-ui">
-            <div style="font-size: 48px; margin-bottom: 15px;">💿</div>
-            <h3 id="nowPlayingName" style="margin: 0 0 10px 0; word-break: break-word;">No track selected</h3>
-            <p id="nowPlayingFolder" style="color: #888; font-size: 13px; margin: 0; word-break: break-word;">--</p>
+        <div class="player-center">
             <audio id="audioPlayer" controls></audio>
+        </div>
+
+        <div class="volume-right">
+            <!-- Spacer to keep the audio player centered -->
         </div>
     </div>
 
@@ -45,6 +331,7 @@
         const audioPlayer = document.getElementById('audioPlayer');
         const nowPlayingName = document.getElementById('nowPlayingName');
         const nowPlayingFolder = document.getElementById('nowPlayingFolder');
+        const trackCountEl = document.getElementById('trackCount');
 
         let tracks = [];
         let currentIndex = -1;
@@ -61,6 +348,7 @@
             })
             .catch(error => {
                 playlistEl.innerHTML = `<div style="padding: 30px; text-align: center; color: #ff6b6b;">Error: Make sure you ran the Python script to generate tracks.json on your VPS.</div>`;
+                trackCountEl.textContent = "0 songs";
                 console.error(error);
             });
 
@@ -68,18 +356,25 @@
             playlistEl.innerHTML = '';
             
             if (tracks.length === 0) {
-                playlistEl.innerHTML = '<div style="padding: 30px; text-align: center; color: #666;">No M4A files found in tracks.json.</div>';
+                playlistEl.innerHTML = '<div style="padding: 30px; text-align: center; color: #b3b3b3;">No M4A files found in tracks.json.</div>';
+                trackCountEl.textContent = "0 songs";
                 return;
             }
 
+            // Update header count
+            trackCountEl.textContent = `${tracks.length} songs`;
+
             tracks.forEach((track, index) => {
                 const trackEl = document.createElement('div');
-                trackEl.className = 'track';
+                trackEl.className = 'track-row';
                 trackEl.onclick = () => playTrack(index);
 
                 trackEl.innerHTML = `
-                    <div class="track-name">${track.name}</div>
-                    <div class="track-path">📁 ${track.folder}</div>
+                    <div class="track-num">${index + 1}</div>
+                    <div class="track-info-col">
+                        <div class="track-title">${track.name.replace('.m4a', '')}</div>
+                    </div>
+                    <div class="track-folder">${track.folder}</div>
                 `;
                 playlistEl.appendChild(trackEl);
             });
@@ -97,15 +392,16 @@
             // Add highlight to new track
             const currentEl = playlistEl.children[currentIndex];
             currentEl.classList.add('playing');
+            
+            // Smooth scroll so the track is visible
             currentEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
             // Set the audio source directly to the file path on the server
-            // We use encodeURI to handle spaces or special characters in folder/file names
             audioPlayer.src = encodeURI(track.path.replace(/\\/g, '/')); 
             audioPlayer.play();
 
-            // Update UI
-            nowPlayingName.textContent = track.name;
+            // Update bottom bar UI
+            nowPlayingName.textContent = track.name.replace('.m4a', '');
             nowPlayingFolder.textContent = track.folder;
         }
 
