@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="color-scheme" content="dark">
     <title>Server Music Player</title>
     <style>
@@ -26,16 +26,17 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        /* --- TOP SECTION: SIDEBAR + MAIN CONTENT --- */
+        /* --- TOP SECTION --- */
         .top-container {
             display: flex;
             flex: 1;
             overflow: hidden;
         }
 
-        /* Sidebar */
+        /* Sidebar (Hidden on Mobile) */
         .sidebar {
             width: 240px;
             background-color: #000000;
@@ -44,227 +45,146 @@
             flex-direction: column;
             gap: 20px;
         }
-        .logo {
-            font-size: 24px;
-            font-weight: bold;
-            padding: 0 12px;
-            margin-bottom: 10px;
-            color: var(--text-white);
-        }
-        .nav-link {
-            color: var(--text-base);
-            font-weight: 700;
-            font-size: 14px;
-            padding: 8px 12px;
-            cursor: default;
-            transition: color 0.2s;
-        }
-        .nav-link:hover {
-            color: var(--text-white);
-        }
-        .divider {
-            height: 1px;
-            background-color: #282828;
-            margin: 8px 12px;
-        }
+        .logo { font-size: 24px; font-weight: bold; padding: 0 12px; margin-bottom: 10px; color: var(--text-white); }
+        .nav-link { color: var(--text-base); font-weight: 700; font-size: 14px; padding: 8px 12px; cursor: pointer; transition: color 0.2s; }
+        .nav-link:hover, .nav-link.active { color: var(--text-white); }
+        .divider { height: 1px; background-color: #282828; margin: 8px 12px; }
 
-        /* Main Content */
+        /* Main Content Area */
         .main-content {
             flex: 1;
             background: linear-gradient(180deg, #2b2b2b 0%, var(--bg-base) 300px);
             background-color: var(--bg-base);
             overflow-y: auto;
             position: relative;
+            display: flex;
+            flex-direction: column;
         }
 
-        .playlist-header {
-            display: flex;
-            align-items: flex-end;
-            padding: 40px 32px 24px;
-            gap: 24px;
+        /* --- VIEWS --- */
+        .view-section {
+            display: none;
+            flex-direction: column;
+            flex: 1;
         }
-        .cover-art {
-            width: 192px;
-            height: 192px;
-            background: linear-gradient(135deg, #450af5, #c4efd9);
-            box-shadow: 0 4px 60px rgba(0,0,0,0.5);
+        .view-section.active {
+            display: flex;
+        }
+
+        /* Folder Grid View */
+        .folders-container { padding: 32px; }
+        .folders-container h2 { margin-top: 0; font-size: 24px; font-weight: 700; margin-bottom: 24px; }
+        .folder-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 16px;
+        }
+        .folder-card {
+            background-color: var(--bg-elevated);
+            padding: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .folder-card:hover { background-color: var(--bg-highlight); }
+        .folder-icon {
+            aspect-ratio: 1;
+            background-color: #333;
+            border-radius: 4px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 64px;
+            font-size: 48px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
-        .header-info p {
-            font-size: 12px;
-            font-weight: 700;
-            text-transform: uppercase;
-            margin: 0 0 8px 0;
-        }
-        .header-info h1 {
-            font-size: 72px;
-            font-weight: 900;
-            margin: 0 0 12px 0;
-            letter-spacing: -2px;
-        }
-        .header-info span {
-            color: var(--text-base);
-            font-size: 14px;
-        }
+        .folder-name { font-weight: 700; font-size: 14px; color: var(--text-white); word-break: break-word; }
+        .folder-count { font-size: 12px; color: var(--text-base); }
 
-        /* Track List Container */
-        .tracks-container {
-            padding: 0 32px 32px;
-            background-color: rgba(0,0,0,0.1);
+        /* Track List View */
+        .back-btn {
+            background: rgba(0,0,0,0.5); border: none; color: white;
+            padding: 8px 16px; border-radius: 20px; font-weight: bold;
+            cursor: pointer; align-self: flex-start; margin: 24px 32px 0;
+            display: flex; align-items: center; gap: 8px;
         }
-
-        .track-grid-header {
-            display: grid;
-            grid-template-columns: 40px 2fr 1fr;
-            color: var(--text-base);
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            padding: 8px 16px;
-            border-bottom: 1px solid #2a2a2a;
-            margin-bottom: 12px;
-            position: sticky;
-            top: 0;
-            background-color: var(--bg-base);
-            z-index: 2;
+        .playlist-header {
+            display: flex; align-items: flex-end; padding: 24px 32px; gap: 24px;
         }
+        .cover-art {
+            width: 150px; height: 150px;
+            background: linear-gradient(135deg, #450af5, #c4efd9);
+            box-shadow: 0 4px 40px rgba(0,0,0,0.5);
+            display: flex; align-items: center; justify-content: center; font-size: 64px;
+        }
+        .header-info p { font-size: 12px; font-weight: 700; text-transform: uppercase; margin: 0 0 8px 0; }
+        .header-info h1 { font-size: 48px; font-weight: 900; margin: 0 0 12px 0; letter-spacing: -1px; word-break: break-word; }
+        .header-info span { color: var(--text-base); font-size: 14px; }
 
+        .tracks-container { padding: 0 32px 32px; flex: 1; }
         .track-row {
-            display: grid;
-            grid-template-columns: 40px 2fr 1fr;
-            align-items: center;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.2s;
+            display: grid; grid-template-columns: 40px 1fr; align-items: center;
+            padding: 10px 16px; border-radius: 4px; cursor: pointer; transition: background-color 0.2s;
         }
-        .track-row:hover {
-            background-color: rgba(255,255,255,0.1);
-        }
-        .track-row.playing .track-title {
-            color: var(--spotify-green);
-        }
-        .track-row.playing .track-num {
-            color: var(--spotify-green);
-        }
+        .track-row:hover { background-color: rgba(255,255,255,0.1); }
+        .track-row.playing .track-title { color: var(--spotify-green); }
+        .track-row.playing .track-num { color: var(--spotify-green); }
+        
+        .track-num { color: var(--text-base); font-size: 14px; font-variant-numeric: tabular-nums; }
+        .track-title { color: var(--text-white); font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        .track-num {
-            color: var(--text-base);
-            font-size: 14px;
-            font-variant-numeric: tabular-nums;
-        }
-        .track-info-col {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            padding-right: 16px;
-        }
-        .track-title {
-            color: var(--text-white);
-            font-size: 16px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .track-folder {
-            color: var(--text-base);
-            font-size: 14px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        /* --- BOTTOM BAR: PLAYER --- */
+        /* --- BOTTOM PLAYER --- */
         .bottom-bar {
-            height: 90px;
             background-color: var(--bg-elevated);
             border-top: 1px solid #282828;
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            padding: 0 16px;
+            padding: 12px 16px;
             z-index: 10;
+            gap: 16px;
         }
-
         .now-playing-left {
-            width: 30%;
-            display: flex;
-            align-items: center;
-            gap: 14px;
+            display: flex; align-items: center; gap: 12px; width: 250px; flex-shrink: 0;
         }
         .np-cover {
-            width: 56px;
-            height: 56px;
-            background-color: #282828;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            border-radius: 4px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+            width: 48px; height: 48px; background-color: #282828;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; border-radius: 4px;
         }
-        .np-text {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            overflow: hidden;
-        }
-        .np-name {
-            color: var(--text-white);
-            font-size: 14px;
-            font-weight: 600;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .np-folder {
-            color: var(--text-base);
-            font-size: 12px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .player-center {
-            width: 40%;
-            max-width: 722px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
+        .np-text { display: flex; flex-direction: column; gap: 4px; overflow: hidden; }
+        .np-name { color: var(--text-white); font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .np-folder { color: var(--text-base); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
-        /* Styling the native audio player to blend in */
-        audio {
-            width: 100%;
-            height: 40px;
-            outline: none;
-            opacity: 0.9;
-        }
-
-        .volume-right {
-            width: 30%;
-            display: flex;
-            justify-content: flex-end;
-        }
+        .player-center { flex: 1; display: flex; justify-content: center; }
+        audio { width: 100%; max-width: 600px; height: 40px; outline: none; opacity: 0.9; }
 
         /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 12px;
-        }
-        ::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        ::-webkit-scrollbar-thumb {
-            background-color: rgba(255, 255, 255, 0.3);
-            border: 3px solid var(--bg-base);
-            border-radius: 8px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background-color: rgba(255, 255, 255, 0.5);
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background-color: rgba(255, 255, 255, 0.2); border-radius: 8px; }
+
+        /* --- MOBILE RESPONSIVE --- */
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .folders-container { padding: 20px; }
+            .folder-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+            .folder-icon { font-size: 36px; }
+            
+            .back-btn { margin: 16px 20px 0; }
+            .playlist-header { flex-direction: column; align-items: center; text-align: center; padding: 20px; gap: 16px; }
+            .cover-art { width: 180px; height: 180px; }
+            .header-info h1 { font-size: 32px; }
+            
+            .tracks-container { padding: 0 10px 20px; }
+            .track-row { padding: 12px; }
+            
+            /* Mobile Player Stacked */
+            .bottom-bar { flex-direction: column; align-items: stretch; padding: 10px; gap: 10px; height: auto; }
+            .now-playing-left { width: 100%; }
+            .player-center { width: 100%; }
+            audio { max-width: 100%; }
         }
     </style>
 </head>
@@ -274,36 +194,41 @@
         <!-- Sidebar -->
         <div class="sidebar">
             <div class="logo">🎵 Serverify</div>
-            <div class="nav-link">🏠 Home</div>
-            <div class="nav-link">🔍 Search</div>
-            <div class="nav-link">📚 Your Library</div>
-            <div class="divider"></div>
-            <div class="nav-link">➕ Create Playlist</div>
-            <div class="nav-link">💖 Liked Songs</div>
+            <div class="nav-link active" onclick="showFolders()">🏠 Home / Folders</div>
         </div>
 
         <!-- Main Content -->
         <div class="main-content">
-            <div class="playlist-header">
-                <div class="cover-art">📁</div>
-                <div class="header-info">
-                    <p>Public Playlist</p>
-                    <h1>Server Library</h1>
-                    <span id="trackCount">Loading tracks...</span>
+            
+            <!-- VIEW 1: FOLDER LIST -->
+            <div id="view-folders" class="view-section active">
+                <div class="folders-container">
+                    <h2>Your Folders</h2>
+                    <div class="folder-grid" id="folderGrid">
+                        <div style="color: #b3b3b3;">Loading folders...</div>
+                    </div>
                 </div>
             </div>
 
-            <div class="tracks-container">
-                <div class="track-grid-header">
-                    <div>#</div>
-                    <div>Title</div>
-                    <div>Album / Folder</div>
+            <!-- VIEW 2: TRACK LIST -->
+            <div id="view-tracks" class="view-section">
+                <button class="back-btn" onclick="showFolders()">← Back</button>
+                <div class="playlist-header">
+                    <div class="cover-art">📁</div>
+                    <div class="header-info">
+                        <p>Folder</p>
+                        <h1 id="playlistTitle">Folder Name</h1>
+                        <span id="trackCount">0 songs</span>
+                    </div>
                 </div>
-                
-                <div id="playlist">
-                    <!-- Tracks will be injected here via JS -->
+
+                <div class="tracks-container">
+                    <div id="playlist">
+                        <!-- Tracks injected here -->
+                    </div>
                 </div>
             </div>
+
         </div>
     </div>
 
@@ -320,95 +245,167 @@
         <div class="player-center">
             <audio id="audioPlayer" controls></audio>
         </div>
-
-        <div class="volume-right">
-            <!-- Spacer to keep the audio player centered -->
-        </div>
     </div>
 
     <script>
+        // DOM Elements
+        const viewFolders = document.getElementById('view-folders');
+        const viewTracks = document.getElementById('view-tracks');
+        const folderGrid = document.getElementById('folderGrid');
         const playlistEl = document.getElementById('playlist');
+        const playlistTitle = document.getElementById('playlistTitle');
+        const trackCountEl = document.getElementById('trackCount');
+        
         const audioPlayer = document.getElementById('audioPlayer');
         const nowPlayingName = document.getElementById('nowPlayingName');
         const nowPlayingFolder = document.getElementById('nowPlayingFolder');
-        const trackCountEl = document.getElementById('trackCount');
 
-        let tracks = [];
-        let currentIndex = -1;
+        // State
+        let groupedTracks = {}; // { "1-50": [track1, track2], "51-100": [...] }
+        let currentPlaylist = []; // Array of tracks in currently viewing folder
+        let currentlyPlayingTrack = null; // Reference to the exact track object playing
 
-        // Fetch the JSON list of files from the server
+        // Fetch Data
         fetch('tracks.json')
             .then(response => {
                 if (!response.ok) throw new Error("Could not find tracks.json");
                 return response.json();
             })
             .then(data => {
-                tracks = data;
-                renderPlaylist();
+                organizeData(data);
+                renderFolders();
             })
             .catch(error => {
-                playlistEl.innerHTML = `<div style="padding: 30px; text-align: center; color: #ff6b6b;">Error: Make sure you ran the Python script to generate tracks.json on your VPS.</div>`;
-                trackCountEl.textContent = "0 songs";
+                folderGrid.innerHTML = `<div style="color: #ff6b6b; grid-column: 1/-1;">Error: Make sure you ran the Python script to generate tracks.json on your VPS.</div>`;
                 console.error(error);
             });
+
+        // Group the flat JSON array into folders
+        function organizeData(flatTracks) {
+            groupedTracks = {};
+            flatTracks.forEach(track => {
+                const folder = track.folder || "Root";
+                if (!groupedTracks[folder]) {
+                    groupedTracks[folder] = [];
+                }
+                groupedTracks[folder].push(track);
+            });
+        }
+
+        // --- NAVIGATION VIEWS ---
+
+        function showFolders() {
+            viewTracks.classList.remove('active');
+            viewFolders.classList.add('active');
+        }
+
+        function openFolder(folderName) {
+            currentPlaylist = groupedTracks[folderName];
+            
+            // Update Header
+            playlistTitle.textContent = folderName;
+            trackCountEl.textContent = `${currentPlaylist.length} songs`;
+            
+            // Render Tracks
+            renderPlaylist();
+            
+            // Switch View
+            viewFolders.classList.remove('active');
+            viewTracks.classList.add('active');
+            
+            // Scroll to top
+            document.querySelector('.main-content').scrollTop = 0;
+        }
+
+        // --- RENDERING ---
+
+        function renderFolders() {
+            folderGrid.innerHTML = '';
+            
+            const folderNames = Object.keys(groupedTracks).sort();
+            
+            if (folderNames.length === 0) {
+                folderGrid.innerHTML = '<div style="color: #b3b3b3;">No audio files found.</div>';
+                return;
+            }
+
+            folderNames.forEach(folderName => {
+                const count = groupedTracks[folderName].length;
+                
+                const card = document.createElement('div');
+                card.className = 'folder-card';
+                card.onclick = () => openFolder(folderName);
+                
+                card.innerHTML = `
+                    <div class="folder-icon">📁</div>
+                    <div>
+                        <div class="folder-name">${folderName}</div>
+                        <div class="folder-count">${count} song${count !== 1 ? 's' : ''}</div>
+                    </div>
+                `;
+                folderGrid.appendChild(card);
+            });
+        }
 
         function renderPlaylist() {
             playlistEl.innerHTML = '';
             
-            if (tracks.length === 0) {
-                playlistEl.innerHTML = '<div style="padding: 30px; text-align: center; color: #b3b3b3;">No M4A files found in tracks.json.</div>';
-                trackCountEl.textContent = "0 songs";
-                return;
-            }
-
-            // Update header count
-            trackCountEl.textContent = `${tracks.length} songs`;
-
-            tracks.forEach((track, index) => {
+            currentPlaylist.forEach((track, index) => {
                 const trackEl = document.createElement('div');
                 trackEl.className = 'track-row';
+                
+                // Highlight if this is the currently playing track
+                if (currentlyPlayingTrack && currentlyPlayingTrack.path === track.path) {
+                    trackEl.classList.add('playing');
+                }
+
                 trackEl.onclick = () => playTrack(index);
 
                 trackEl.innerHTML = `
                     <div class="track-num">${index + 1}</div>
-                    <div class="track-info-col">
-                        <div class="track-title">${track.name.replace('.m4a', '')}</div>
-                    </div>
-                    <div class="track-folder">${track.folder}</div>
+                    <div class="track-title">${track.name.replace('.m4a', '')}</div>
                 `;
                 playlistEl.appendChild(trackEl);
             });
         }
 
+        // --- PLAYBACK LOGIC ---
+
         function playTrack(index) {
-            // Remove highlight from previous track
-            if (currentIndex !== -1 && playlistEl.children[currentIndex]) {
-                playlistEl.children[currentIndex].classList.remove('playing');
-            }
-
-            currentIndex = index;
-            const track = tracks[index];
+            const track = currentPlaylist[index];
+            currentlyPlayingTrack = track;
             
-            // Add highlight to new track
-            const currentEl = playlistEl.children[currentIndex];
-            currentEl.classList.add('playing');
-            
-            // Smooth scroll so the track is visible
-            currentEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-
-            // Set the audio source directly to the file path on the server
+            // Update audio source
             audioPlayer.src = encodeURI(track.path.replace(/\\/g, '/')); 
             audioPlayer.play();
 
             // Update bottom bar UI
             nowPlayingName.textContent = track.name.replace('.m4a', '');
             nowPlayingFolder.textContent = track.folder;
+
+            // Re-render playlist to update green highlight
+            renderPlaylist();
         }
 
-        // Auto-play next song when current one finishes
+        // Auto-play next song in the CURRENT folder when current one finishes
         audioPlayer.addEventListener('ended', () => {
-            if (currentIndex < tracks.length - 1) {
+            if (!currentlyPlayingTrack) return;
+            
+            // Find the folder the current track belongs to
+            const folderList = groupedTracks[currentlyPlayingTrack.folder];
+            if (!folderList) return;
+
+            // Find current track index within that folder
+            const currentIndex = folderList.findIndex(t => t.path === currentlyPlayingTrack.path);
+            
+            // If there's a next song in this folder, play it
+            if (currentIndex !== -1 && currentIndex < folderList.length - 1) {
+                // Temporarily set currentPlaylist so playTrack logic works seamlessly
+                const previousPlaylist = currentPlaylist;
+                currentPlaylist = folderList;
                 playTrack(currentIndex + 1);
+                // Restore the viewed playlist if the user was looking at a different folder
+                currentPlaylist = previousPlaylist; 
             }
         });
     </script>
